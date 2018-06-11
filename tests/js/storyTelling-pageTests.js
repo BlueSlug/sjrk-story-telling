@@ -37,13 +37,13 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/master/LICENS
             name: "Test page grade",
             tests: [{
                 name: "Test events and timing",
-                expect: 7,
+                expect: 11,
                 sequence: [{
-                //     "event": "{pageTest page menu}.events.onControlsBound",
-                //     "listener": "jqUnit.assert",
-                //     "args": "menu onControlsBound event fired"
-                // },
-                // {
+                    "event": "{pageTest page menu}.events.onControlsBound",
+                    "listener": "jqUnit.assert",
+                    "args": "menu onControlsBound event fired"
+                },
+                {
                     "event": "{pageTest page}.events.onAllUiComponentsReady",
                     "listener": "jqUnit.assert",
                     "args": "onAllUiComponentsReady event fired"
@@ -85,6 +85,21 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/master/LICENS
                     "event": "{page}.menu.events.onControlsBound",
                     "listener": "jqUnit.assert",
                     "args": "menu onControlsBound event fired after uiLanguage change to English"
+                },
+                {
+                    "event": "{page}.menu.events.onControlsBound",
+                    "listener": "jqUnit.assert",
+                    "args": "menu onControlsBound event fired again"
+                },
+                {
+                    "event": "{page}.menu.events.onControlsBound",
+                    "listener": "jqUnit.assert",
+                    "args": "menu onControlsBound event fired again for some reason"
+                },
+                {
+                    "event": "{page}.menu.events.onControlsBound",
+                    "listener": "jqUnit.assert",
+                    "args": "menu onControlsBound event fired yet again for some reason"
                 },
                 {
                     "event": "{page}.uio.prefsEditorLoader.messageLoader.events.onResourcesLoaded",
