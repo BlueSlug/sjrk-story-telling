@@ -163,7 +163,7 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/master/LICENS
                 {
                     "event": "{page}.storySpeaker.events.onSpeechQueued",
                     "listener": "jqUnit.assertEquals",
-                    "args": ["Speech queued with expected values", "Shyguy is a cat", "{arguments}.0"]
+                    "args": ["Speech queued with expected values", "Shyguy is a cat", "{arguments}.0.text"]
                 },
                 {
                     func: "{page}.applier.change",
