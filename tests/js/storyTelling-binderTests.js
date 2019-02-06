@@ -30,14 +30,14 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/master/LICENS
             name: "Test binder.",
             tests: [{
                 name: "Test binding",
-                expect: 3,
+                expect: 6,
                 sequence: [{
                     "func": "{binder}.events.onUiReadyToBind.fire"
                 },
                 {
                     "event": "{binder}.events.onBindingApplied",
                     "listener": "sjrk.storyTelling.binderTester.testBinding",
-                    "args": ["{binder}", "Model and input value are equal at initial creation"]
+                    "args": ["{binder}", "Test value!", "at initial creation"]
                 },
                 {
                     "func": "{binder}.applier.change",
@@ -47,7 +47,7 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/master/LICENS
                     "changeEvent": "{binder}.applier.modelChanged",
                     "path": "testValue",
                     "listener": "sjrk.storyTelling.binderTester.testBinding",
-                    "args": ["{binder}", "Model and input value are equal when model is changed"]
+                    "args": ["{binder}", "New test value!", "when model is changed"]
                 },
                 {
                     "func": "sjrk.storyTelling.testUtils.changeFormElement",
@@ -57,16 +57,17 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/master/LICENS
                     "changeEvent": "{binder}.applier.modelChanged",
                     "path": "testValue",
                     "listener": "sjrk.storyTelling.binderTester.testBinding",
-                    "args": ["{binder}", "Model and input value are equal when form input is changed"]
+                    "args": ["{binder}", "Test value from changing form", "when form input is changed"]
                 }]
             }]
         }]
     });
 
-    sjrk.storyTelling.binderTester.testBinding = function (component, message) {
+    sjrk.storyTelling.binderTester.testBinding = function (component, expectedValue, message) {
         var modelValue = fluid.get(component.model, "testValue");
-        var inputValue = component.locate("testValueInput").val();
-        jqUnit.assertEquals(message, modelValue, inputValue);
+        var domValue = component.locate("testValueInput").val();
+        jqUnit.assertEquals("DOM matches expected value " + message, expectedValue, domValue);
+        jqUnit.assertEquals("Model matches expected value " + message, expectedValue, modelValue);
     };
 
     fluid.defaults("sjrk.storyTelling.binderTest", {

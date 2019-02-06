@@ -25,13 +25,43 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/master/LICENS
                 options: {
                     model: "{block}.model",
                     selectors: {
-                        heading: ".sjrkc-st-block-heading"
+                        heading: ".sjrkc-st-block-heading",
+                        selected: "{editor}.options.selectors.selectedCheckbox"
                     },
                     bindings: {
-                        heading: "heading"
+                        heading: "heading",
+                        selected: {
+                            selector: "selected",
+                            path: "isSelected",
+                            rules: {
+                                domToModel: {
+                                    "": {
+                                        transform: {
+                                            type: "gpii.binder.transforms.checkToBoolean",
+                                            inputPath: ""
+                                        }
+                                    }
+                                },
+                                modelToDom: {
+                                    "": {
+                                        transform: {
+                                            type: "gpii.binder.transforms.booleanToCheck",
+                                            inputPath: ""
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     },
                     events: {
                         onUiReadyToBind: "{templateManager}.events.onTemplateRendered"
+                    }
+                }
+            },
+            block: {
+                options: {
+                    model: {
+                        isSelected: false
                     }
                 }
             }
