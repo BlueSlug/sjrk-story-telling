@@ -15,7 +15,7 @@
   },
   "homepage": "https://github.com/fluid-project/sjrk-story-telling",
   "dependencies": {
-    "gpii-binder": "1.0.4",
+    "gpii-binder": "1.0.5-dev.20190207T095932Z.9b324b8.GPII-3699",
     "gpii-handlebars": "1.1.0",
     "handlebars": "4.0.10",
     "infusion": "3.0.0-dev.20181204T213346Z.2ca90f6e6"
