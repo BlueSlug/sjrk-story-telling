@@ -98,6 +98,38 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/master/LICENS
         }
     };
 
+    fluid.defaults("sjrk.storyTelling.page.storyEditTester.brokenSequenceElement", {
+        gradeNames: "fluid.test.sequenceElement",
+        testValue: null, // to be supplied by the implementing test
+        sequence: [{
+            funcName: "jqUnit.assertEquals", // this works as expected
+            args: ["It works", "in its right place", "{that}.options.testValue"]
+        },
+        {
+            funcName: "jqUnit.assertEquals", // this does not work as expected
+            args: [
+                "It doesn't work",
+                "Everything in its right place",
+                "@expand:sjrk.storyTelling.page.storyEditTester.buildBrokenString({that}.options.testValue)"]
+        }]
+    });
+
+    fluid.defaults("sjrk.storyTelling.page.storyEditTester.brokenSequence", {
+        gradeNames: "fluid.test.sequence",
+        sequenceElements: {
+            brokenSequenceElement: {
+                gradeNames: "sjrk.storyTelling.page.storyEditTester.brokenSequenceElement",
+                options: {
+                    testValue: "in its right place"
+                }
+            }
+        }
+    });
+
+    sjrk.storyTelling.page.storyEditTester.buildBrokenString = function (testValue) {
+        return "Everything " + testValue;
+    };
+
     fluid.defaults("sjrk.storyTelling.page.storyEditTester", {
         gradeNames: ["fluid.test.testCaseHolder"],
         members: {
@@ -758,6 +790,11 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/master/LICENS
                     funcName: "jqUnit.assertDeepEq",
                     args: ["Story content is empty after removing audio block", [], "{storyEdit}.storyPreviewer.story.model.content"]
                 }]
+            },
+            {
+                name: "Test broken sequence",
+                expect: 2,
+                sequenceGrade: "sjrk.storyTelling.page.storyEditTester.brokenSequence"
             },
             {
                 name: "Test block filtering model relay: Video block",
