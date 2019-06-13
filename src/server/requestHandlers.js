@@ -374,6 +374,24 @@ fluid.defaults("sjrk.storyTelling.server.baseThemeHandler", {
     }
 });
 
+fluid.defaults("sjrk.storyTelling.server.learningReflectionsThemeHandler", {
+    gradeNames: ["sjrk.storyTelling.server.staticHandlerBase"],
+    requestMiddleware: {
+        "static": {
+            middleware: "{server}.learningReflections"
+        }
+    }
+});
+
+fluid.defaults("sjrk.storyTelling.server.karismaThemeHandler", {
+    gradeNames: ["sjrk.storyTelling.server.staticHandlerBase"],
+    requestMiddleware: {
+        "static": {
+            middleware: "{server}.karisma"
+        }
+    }
+});
+
 fluid.defaults("sjrk.storyTelling.server.uploadsHandler", {
     gradeNames: ["sjrk.storyTelling.server.staticHandlerBase"],
     requestMiddleware: {
