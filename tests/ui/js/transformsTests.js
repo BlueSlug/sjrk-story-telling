@@ -282,4 +282,142 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/master/LICENS
         });
     });
 
+    var negateTransformTestCases = {
+        "test_01": {
+            input: true,
+            expectedResult: false,
+            expectedInverseResult: true
+        },
+        "test_02": {
+            input: false,
+            expectedResult: true,
+            expectedInverseResult: false
+        },
+        "test_03": {
+            input: 0,
+            expectedResult: true,
+            expectedInverseResult: false
+        },
+        "test_04": {
+            input: 1,
+            expectedResult: false,
+            expectedInverseResult: true
+        },
+        "test_05": {
+            input: -1,
+            expectedResult: false,
+            expectedInverseResult: true
+        },
+        "test_06": {
+            input: "",
+            expectedResult: true,
+            expectedInverseResult: false
+        },
+        "test_07": {
+            input: "Rootbeer",
+            expectedResult: false,
+            expectedInverseResult: true
+        },
+        "test_08": {
+            input: {},
+            expectedResult: false,
+            expectedInverseResult: true
+        },
+        "test_09": {
+            input: [],
+            expectedResult: false,
+            expectedInverseResult: true
+        },
+        "test_10": {
+            input: [1],
+            expectedResult: true,
+            expectedInverseResult: false
+        },
+        "test_11": {
+            input: [0],
+            expectedResult: false,
+            expectedInverseResult: true
+        },
+        "test_12": {
+            input: [""],
+            expectedResult: false,
+            expectedInverseResult: true
+        },
+        "test_13": {
+            input: "true",
+            expectedResult: false,
+            expectedInverseResult: true
+        },
+        "test_14": {
+            input: "false",
+            expectedResult: false,
+            expectedInverseResult: true
+        },
+        "test_15": {
+            input: "1",
+            expectedResult: false,
+            expectedInverseResult: true
+        },
+        "test_16": {
+            input: "0",
+            expectedResult: false,
+            expectedInverseResult: true
+        },
+        "test_17": {
+            input: "-1",
+            expectedResult: false,
+            expectedInverseResult: true
+        },
+        "test_18": {
+            input: null,
+            expectedResult: true,
+            expectedInverseResult: false
+        },
+        "test_19": {
+            input: undefined,
+            expectedResult: true,
+            expectedInverseResult: false
+        },
+        "test_20": {
+            input: [[]],
+            expectedResult: false,
+            expectedInverseResult: true
+        },
+        "test_21": {
+            input: NaN,
+            expectedResult: true,
+            expectedInverseResult: false
+        },
+        "test_22": {
+            input: Infinity,
+            expectedResult: false,
+            expectedInverseResult: true
+        },
+        "test_23": {
+            input: -Infinity,
+            expectedResult: false,
+            expectedInverseResult: true
+        }
+    };
+
+    jqUnit.test("Test negate transform function", function () {
+        jqUnit.expect(34);
+
+        fluid.each(negateTransformTestCases, function (testCase, index) {
+            var transformSpec = { type: "sjrk.storyTelling.transforms.negate" };
+
+            var transformRules = { transform: transformSpec };
+
+            var resultString = fluid.model.transform(testCase.input, transformRules);
+            jqUnit.assertEquals("Negative of test case " + index + " is as expected", testCase.expectedResult, resultString);
+
+            var invertedRules = fluid.model.transform.invertConfiguration(transformRules);
+            var invertedOutput = fluid.model.transformWithRules(
+                resultString,
+                invertedRules
+            ).sourceArray;
+            jqUnit.assertDeepEq("Inverse negative of test case " + index + " is as expected", testCase.expectedInverseResult, invertedOutput);
+        });
+    });
+
 })(jQuery, fluid);

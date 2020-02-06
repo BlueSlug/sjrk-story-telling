@@ -91,11 +91,11 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/master/LICENS
      * - "index": the index value to be checked
      */
     fluid.defaults("sjrk.storyTelling.transforms.valueOrIndex", {
-        "gradeNames": ["fluid.standardTransformFunction"],
-        "inputVariables": {
-            "component": null,
-            "path": null,
-            "index": null
+        gradeNames: ["fluid.standardTransformFunction"],
+        inputVariables: {
+            component: null,
+            path: null,
+            index: null
         }
     });
 
@@ -106,6 +106,23 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/master/LICENS
         var index = extraInputs.index();
 
         return fluid.get(component, path)[index] || index;
+    };
+
+    /* A transform which, given a value, will return the negative of that value
+     * This is achieved via a simple "!" (not) operator, there is no fancy logic
+     * to deal with particular types of data.
+     * This transform is partly invertible, it is only fully invertible for boolean
+     * inputs (true or false)
+     * - "value": the value to negate
+     */
+    fluid.defaults("sjrk.storyTelling.transforms.negate", {
+        gradeNames: ["fluid.standardOutputTransformFunction"]
+    });
+
+    sjrk.storyTelling.transforms.negate = function (transformSpec) {
+        var toNegate = transformSpec.input;
+
+        return !toNegate;
     };
 
 })(jQuery, fluid);
