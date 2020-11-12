@@ -37,15 +37,22 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/main/LICENSE.
                     }
                 },
                 target: "{that storyEditor blockManager}.options.modelListeners"
+            },
+            "blockUi.reportBlockCreation": {
+                record: { "onReadyToBind.escalate": "{storyEdit}.events.onInitialChange" },
+                target: "{that storyEditor blockManager blockUi}.options.listeners"
             }
         },
         pageSetup: {
             hiddenEditorClass: "hidden",
             storyAutosaveKey: "storyAutosave",
-            storyAutoloadSourceName: "storyAutoload",
+            storyCreationSourceName: "storyCreation",
             storySaveUrl: "/stories/",
             viewPageUrl: "storyView.html",
             storyIdPath: "id"
+        },
+        members: {
+            storyCreationPromise: null
         },
         model: {
             /* The initial page state is only the Edit Story Step showing.
@@ -153,7 +160,8 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/main/LICENSE.
             onStoryCreateOnServerError: null,
             onStoryPublishRequested: "{storyPreviewer}.events.onShareRequested",
             onStoryPublishSuccess: null,
-            onStoryPublishError: "{storyPreviewer}.events.onShareComplete"
+            onStoryPublishError: "{storyPreviewer}.events.onShareComplete",
+            onInitialChange: null
         },
         listeners: {
             "{storyEditor}.events.onStorySubmitRequested": [{
@@ -177,9 +185,8 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/main/LICENSE.
             },
             "onStoryPublishRequested.publishStory": "{that}.publishStory",
             "onStoryPublishSuccess.redirectToViewStory": "{that}.redirectToViewStory",
-            "onCreate.setAuthoringEnabledClass": {
-                func: "{that}.setAuthoringEnabledClass"
-            }
+            "onCreate.setAuthoringEnabledClass": "{that}.setAuthoringEnabledClass",
+            "onInitialChange.createNewStoryOnServer": "{that}.createNewStoryOnServer"
         },
         invokers: {
             // Sets the visibility of page elements depending on authoringEnabled
@@ -208,14 +215,16 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/main/LICENSE.
                 value: "{arguments}.0",
                 source: "storyAutoload"
             },
-            // Creates a new story on the server
+            // Creates a new story on the server and sets the Story Creation Promise
             createNewStoryOnServer: {
                 funcName: "sjrk.storyTelling.base.page.storyEdit.createNewStoryOnServer",
                 args: [
+                    "{that}.options.pageSetup.storyAutosaveKey",
+                    "{that}",
                     "{that}.options.pageSetup.storySaveUrl",
                     "{storyEditor}.story",
                     "{that}.options.pageSetup.storyIdPath",
-                    "{that}.options.pageSetup.storyAutoloadSourceName",
+                    "{that}.options.pageSetup.storyCreationSourceName",
                     "{that}.events.onStoryCreateOnServerError"
                 ]
             },
@@ -292,6 +301,11 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/main/LICENSE.
                                         args: ["{storyEdit}.options.pageSetup.storyAutosaveKey", "{that}.model"],
                                         excludeSource: ["init", "storyAutoload"],
                                         namespace: "autosaveStory"
+                                    },
+                                    reportMetadataChange: {
+                                        path: ["title", "author", "tags"], // could this gum things up?
+                                        func: "{storyEdit}.events.onInitialChange.fire",
+                                        excludeSource: ["init"]
                                     }
                                 }
                             }
@@ -371,6 +385,18 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/main/LICENSE.
     };
 
     /**
+    * Retrieves the contents of the localStorage's autosave location
+    *
+    * @param {String} storyAutosaveKey - the key to load the story content from
+    *
+    * @return {Object} - Model data for a `sjrk.storyTelling.story` component
+    */
+    sjrk.storyTelling.base.page.storyEdit.getAutosaveStoryData = function (storyAutosaveKey) {
+        // localStorage can only store string values
+        return JSON.parse(window.localStorage.getItem(storyAutosaveKey));
+    };
+
+    /**
      * Loads story content from a given key in the browser's localStorage object.
      * If a story was successfully loaded, then the current story is updated with
      * this previously-saved data. If no story is loaded, then a new one is saved
@@ -381,50 +407,65 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/main/LICENSE.
      */
     sjrk.storyTelling.base.page.storyEdit.initializeStory = function (storyAutosaveKey, storyEdit) {
         try {
-            // localStorage can only store string values
-            var savedStoryData = JSON.parse(window.localStorage.getItem(storyAutosaveKey));
+            var savedStoryData = sjrk.storyTelling.base.page.storyEdit.getAutosaveStoryData(storyAutosaveKey);
 
             if (savedStoryData) {
                 // a story was loaded from autosave, update the current story
                 storyEdit.loadStoryContent(savedStoryData);
-            } else {
-                // there's no autosaved story, create a new unpublished story
-                storyEdit.createNewStoryOnServer();
+
+                var storyCreationPromise = fluid.promise();
+                storyCreationPromise.resolve(savedStoryData);
+                storyEdit.storyCreationPromise = storyCreationPromise;
             }
         } catch (ex) {
-            fluid.log(fluid.logLevel.WARN, "An error occurred while initializing story", ex);
+            fluid.log(fluid.logLevel.WARN, "An error occurred while initializing story:", ex);
         }
     };
 
     /**
-     * Creates a new story on the server and sets the current story's ID accordingly
+     * If no Story Autosave data is present, creates a new story on the server
      *
+     * @param {String} storyAutosaveKey - the key to load the story content from
+     * @param {Component} storyEdit - an instance of `sjrk.storyTelling.base.page.storyEdit`
      * @param {String} storySaveUrl - the server URL at which to save a story
      * @param {Component} story - an instance of `sjrk.storyTelling.story`
      * @param {String|String[]} storyIdPath - the model path to the story ID
      * @param {String} sourceName - the name of the Infusion change source for this update
      * @param {Object} errorEvent - the event to be fired in case of an error
      */
-    sjrk.storyTelling.base.page.storyEdit.createNewStoryOnServer = function (storySaveUrl, story, storyIdPath, sourceName, errorEvent) {
-        var serverSavePromise = sjrk.storyTelling.base.page.storyEdit.updateStoryOnServer(storySaveUrl, story.model);
+    sjrk.storyTelling.base.page.storyEdit.createNewStoryOnServer = function (storyAutosaveKey, storyEdit, storySaveUrl, story, storyIdPath, sourceName, errorEvent) {
+        try {
+            // if the story hasn't already been created, or if an attempt hasn't even been made
+            if (!storyEdit.storyCreationPromise || (storyEdit.storyCreationPromise && !storyEdit.storyCreationPromise.disposition)) {
+                // there's no autosaved story, create a new unpublished story
+                var storyCreationPromise = sjrk.storyTelling.base.page.storyEdit.updateStoryOnServer(storySaveUrl, story.model);
+                storyCreationPromise.then(function (data) {
 
-        serverSavePromise.then(function (data) {
-            var successResponse = JSON.parse(data);
+                    var successResponse = JSON.parse(data);
 
-            // The "story created" moment is now, since the story was created successfully
-            story.applier.change("timestampCreated", new Date().toISOString(), null, sourceName);
+                    // The "story created" moment is now, since the story was created successfully
+                    story.applier.change("timestampCreated", new Date().toISOString(), null, sourceName);
 
-            // store the ID on the story model for later use
-            story.applier.change(storyIdPath, successResponse.id, null, sourceName);
-        }, function (jqXHR, textStatus, errorThrown) {
-            fluid.log(fluid.logLevel.WARN, "Error saving a new story to server:");
-            fluid.log(jqXHR, textStatus, errorThrown);
+                    // store the ID on the story model for later use
+                    story.applier.change(storyIdPath, successResponse.id, null, sourceName);
+                }, function (jqXHR, textStatus, errorThrown) {
+                    fluid.log(fluid.logLevel.WARN, "Error saving a new story to server:");
+                    fluid.log(jqXHR, textStatus, errorThrown);
 
-            errorEvent.fire({
-                isError: true,
-                message: fluid.get(jqXHR, ["responseJSON", "message"]) || "Internal server error"
-            });
-        });
+                    errorEvent.fire({
+                        isError: true,
+                        message: fluid.get(jqXHR, ["responseJSON", "message"]) || "Internal server error"
+                    });
+                });
+
+                storyEdit.storyCreationPromise = storyCreationPromise;
+            } else {
+                // What is appropriate here?
+                // Autosaved story exists, or promise is fulfilled.
+            }
+        } catch (ex) {
+            fluid.log(fluid.logLevel.WARN, "An error occurred while handling the story promise:", ex);
+        }
     };
 
     /**
