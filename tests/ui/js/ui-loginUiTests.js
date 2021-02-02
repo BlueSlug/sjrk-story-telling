@@ -14,6 +14,12 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/main/LICENSE.
     // Test component for the loginUi grade
     fluid.defaults("sjrk.storyTelling.ui.testLoginUi", {
         gradeNames: ["sjrk.storyTelling.ui.loginUi"],
+        // invokers: {
+        //     handleValidationResults: {
+        //         funcName: "jqUnit.assertDeepEq",
+        //         args: ["Stub for handleValidationResults was called with expected args", [], "{arguments}.0"]
+        //     },
+        // },
         components: {
             templateManager: {
                 options: {
@@ -26,6 +32,27 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/main/LICENSE.
         }
     });
 
+    // sjrk.storyTelling.ui.loginUiTester.validationTestCases = {
+    //     // missing
+    //     missingInput: {
+    //         expectedResults: {
+    //         },
+    //         email: undefined,
+    //         password: undefined
+    //     },
+    //     // too short
+    //     emailFormatIncorrect: {
+    //         expectedResults: {
+    //         },
+    //         email: "2",
+    //         password: undefined
+    //     },
+    //     // wrong format for email
+    //
+    //     // wrong data type for email (not string)
+    //     // wrong data type for password (not string
+    // };
+
     // Test cases and sequences for the Login UI
     fluid.defaults("sjrk.storyTelling.ui.loginUiTester", {
         gradeNames: ["fluid.test.testCaseHolder"],
@@ -33,7 +60,7 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/main/LICENSE.
             name: "Test Login UI.",
             tests: [{
                 name: "Test UI controls",
-                expect: 2,
+                expect: 3,
                 sequence: [{
                     "event": "{loginUiTest loginUi}.events.onControlsBound",
                     listener: "jqUnit.assert",
@@ -47,6 +74,18 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/main/LICENSE.
                     "event": "{loginUi}.events.onLogInRequested",
                     listener: "jqUnit.assert",
                     args: ["onLogOutRequested event fired"]
+                },
+                {
+                    func: "{loginUi}.setResponseText",
+                    args: ["Shyguy is a soft, gentle cat"]
+                },
+                {
+                    funcName: "sjrk.storyTelling.testUtils.assertElementText",
+                    args: ["{loginUi}.dom.responseText", "Shyguy is a soft, gentle cat"]
+                // },
+                // {
+                //     funcName: "{that}.handleValidationResults",
+                //     args: [""]
                 }]
             }]
         }]

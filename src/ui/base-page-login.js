@@ -113,8 +113,8 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/main/LICENSE.
                 changePath: "loginState",
                 value: "responseReceived"
             },
-            "onLogInError.setServerResponse": {
-                func: "{that}.setServerResponse",
+            "onLogInError.setResponseText": {
+                func: "{that}.loginUi.setResponseText",
                 args: ["{arguments}.0"]
             }
         },
@@ -122,20 +122,19 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/main/LICENSE.
             initiateLogin: {
                 funcName: "sjrk.storyTelling.base.page.login.initiateLogin",
                 args: [
-                    "{that}.options.pageSetup.logInUrl",
-                    "{loginUi}.model.email",
-                    "{loginUi}.model.password",
-                    "{that}.events.onLogInSuccess",
-                    "{that}.events.onLogInError"
+                    "{that}.loginDataSource",
+                    { // model
+                        email: "{loginUi}.model.email",
+                        password: "{loginUi}.model.password"
+                    },
+                    { // options
+                        successEvent: "{that}.events.onLogInSuccess",
+                        failureEvent: "{that}.events.onLogInError"
+                    }
                 ]
             },
             redirectToUrl: {
                 funcName: "sjrk.storyTelling.base.page.login.redirectToUrl",
-                args: ["{arguments}.0"]
-            },
-            setServerResponse: {
-                this: "{loginUi}.dom.responseText",
-                method: "text",
                 args: ["{arguments}.0"]
             }
         },
@@ -144,6 +143,38 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/main/LICENSE.
             loginUi: {
                 type: "sjrk.storyTelling.ui.loginUi",
                 container: ".sjrkc-st-login-container"
+            },
+            // the data should be sent to the server using the dataSource
+            // validation will be done by adding listeners to the onWrite
+            // promise chain
+            loginDataSource: {
+                type: "fluid.dataSource.URL",
+                options: {
+                    gradeNames: ["fluid.dataSource.URL.writable"],
+                    url: "{page}.options.pageSetup.logInUrl",
+                    components: {
+                        encoding: {
+                            type: "fluid.dataSource.encoding.JSON"
+                        }
+                    },
+                    listeners: {
+                        "onWrite.impl": {
+                            // this is what needs to be fiddled with
+                            funcName: "fluid.dataSource.URL.handle",
+                            args: ["{that}", "{arguments}.2", "{arguments}.1", "{arguments}.0"] // options, directModel, model
+                        },
+                        "onCreate.log": {
+                            this: "console",
+                            method: "log",
+                            args: ["datasource onCreate fired"]
+                        },
+                        "onWrite.log": {
+                            this: "console",
+                            method: "log",
+                            args: ["datasource onWrite fired", "{arguments}"]
+                        }
+                    }
+                }
             }
         }
     });
@@ -153,18 +184,27 @@ https://raw.githubusercontent.com/fluid-project/sjrk-story-telling/main/LICENSE.
      * event depending on the outcome. Success event returns the email address,
      * error event returns error details
      *
-     * @param {String} logInUrl - the server URL to call to start a new session
-     * @param {String} email - the author's email address
-     * @param {String} password - the author's password
-     * @param {Object} successEvent - an infusion event to fire upon successful completion
-     * @param {Object} failureEvent - an infusion event to fire on failure
+     * @param {Object} loginDataSource - an instance of `fluid.dataSource.URL.writable`
+     * @param {Object} model - model data
+     * @param {String} model.email - the author's email address
+     * @param {String} model.password - the author's password
+     * @param {Object} options - configuration options for the login call (see below)
+     * @param {Object} options.successEvent - an infusion event to fire upon successful completion
+     * @param {Object} options.failureEvent - an infusion event to fire on failure
+     *
+     * @return {Object} - a promise for the login call
      */
-    sjrk.storyTelling.base.page.login.initiateLogin = function (logInUrl, email, password, successEvent, failureEvent) {
-        sjrk.storyTelling.base.page.login.logIn(logInUrl, email, password).then(function (data) {
-            successEvent.fire(data.email);
-        }, function (jqXHR, textStatus, errorThrown) {
-            failureEvent.fire(sjrk.storyTelling.base.page.getErrorMessageFromXhr(jqXHR, textStatus, errorThrown));
+    sjrk.storyTelling.base.page.login.initiateLogin = function (loginDataSource, model, options) {
+        var loginPromise = loginDataSource.set({}, model);
+
+        loginPromise.then(function (data) { // success
+            options.successEvent.fire(data.email);
+        }, function (jqXHR, textStatus, errorThrown) { // failure
+            var errorMessage = sjrk.storyTelling.base.page.getErrorMessageFromXhr(jqXHR, textStatus, errorThrown);
+            options.failureEvent.fire(errorMessage);
         });
+
+        return loginPromise;
     };
 
     /**
